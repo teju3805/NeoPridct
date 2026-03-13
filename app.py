@@ -1,57 +1,123 @@
 import streamlit as st
-import joblib
 import numpy as np
 import pandas as pd
 import random
-import plotly.express as px
+import plotly.graph_objects as go
 
-st.set_page_config(page_title="NeoPredict", layout="wide")
+st.set_page_config(page_title="NeoPredict NICU Monitor", layout="wide")
 
-st.title("NeoPredict – Neonatal Monitoring System")
+st.title("NeoPredict – NICU Neonatal Monitoring System")
 
-# Load your trained model
-model = joblib.load("apnea_model.pkl")
+st.markdown("Real-time monitoring of neonatal vital signs with AI condition detection.")
 
+# Sidebar sensors
 st.sidebar.header("Simulated Sensor Data")
 
-heart_rate = st.sidebar.slider("Heart Rate (bpm)", 80,180,120)
-spo2 = st.sidebar.slider("SpO2 (%)",80,100,96)
-temp = st.sidebar.slider("Temperature (°C)",35.0,40.0,36.8)
+heart_rate = st.sidebar.slider("Heart Rate (bpm)", 60, 200, 120)
+spo2 = st.sidebar.slider("SpO₂ (%)", 80, 100, 96)
+temperature = st.sidebar.slider("Temperature (°C)", 34.0, 40.0, 36.8)
+respiration = st.sidebar.slider("Respiration Rate (breaths/min)", 5, 60, 32)
 
-# Show vitals
-col1,col2,col3 = st.columns(3)
+# Vital display
+col1,col2,col3,col4 = st.columns(4)
 
-col1.metric("Heart Rate",f"{heart_rate} bpm")
-col2.metric("SpO2",f"{spo2}%")
-col3.metric("Temperature",f"{temp} °C")
-
-st.markdown("---")
-
-# Run AI prediction
-if st.button("Run AI Prediction"):
-
-    features = np.array([[heart_rate,spo2,temp]])
-
-    prediction = model.predict(features)
-
-    st.subheader("AI Prediction Result")
-
-    if prediction == 1:
-        st.error("⚠ Possible Apnea Detected")
-        st.write("Alert sent to doctor and parents")
-    else:
-        st.success("Infant Condition Stable")
+col1.metric("❤️ Heart Rate", f"{heart_rate} bpm")
+col2.metric("🩸 SpO₂", f"{spo2} %")
+col3.metric("🌡 Temperature", f"{temperature} °C")
+col4.metric("🫁 Respiration", f"{respiration} bpm")
 
 st.markdown("---")
 
-# Monitoring graph
-st.subheader("Heart Rate Trend")
+# AI Condition Detection
+st.subheader("AI Condition Detection")
 
-data = pd.DataFrame({
-"time":range(30),
-"heart_rate":[random.randint(110,150) for _ in range(30)]
-})
+condition = "Normal"
 
-fig = px.line(data,x="time",y="heart_rate")
+if respiration < 12:
+    condition = "Apnea"
 
-st.plotly_chart(fig,use_container_width=True)
+elif heart_rate < 90:
+    condition = "Bradycardia"
+
+elif temperature > 38 and heart_rate > 150:
+    condition = "Sepsis Risk"
+
+# Show condition
+if condition == "Apnea":
+    st.error("⚠ Apnea Detected — Breathing rate critically low")
+
+elif condition == "Bradycardia":
+    st.error("⚠ Bradycardia Detected — Heart rate dangerously low")
+
+elif condition == "Sepsis Risk":
+    st.error("⚠ Possible Sepsis Risk Detected")
+
+else:
+    st.success("Infant Vital Signs Stable")
+
+st.markdown("---")
+
+# Alert system
+st.subheader("🚨 Alert System")
+
+if condition != "Normal":
+
+    st.warning("Emergency notification triggered")
+
+    st.write("📩 Alert sent to:")
+
+    st.write("• NICU Doctor")
+
+    st.write("• Hospital Caregiver")
+
+    st.write("• Infant Parents")
+
+else:
+
+    st.success("No critical alerts")
+
+st.markdown("---")
+
+# Monitoring graphs
+st.subheader("Live NICU Monitoring")
+
+time = list(range(30))
+
+hr = [random.randint(110,160) for _ in range(30)]
+resp = [random.randint(25,40) for _ in range(30)]
+spo = [random.randint(92,100) for _ in range(30)]
+
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(
+    x=time,
+    y=hr,
+    mode="lines",
+    name="Heart Rate",
+    line=dict(color="red",width=3)
+))
+
+fig.add_trace(go.Scatter(
+    x=time,
+    y=resp,
+    mode="lines",
+    name="Respiration",
+    line=dict(color="cyan",width=3)
+))
+
+fig.add_trace(go.Scatter(
+    x=time,
+    y=spo,
+    mode="lines",
+    name="SpO₂",
+    line=dict(color="green",width=3)
+))
+
+fig.update_layout(
+    template="plotly_dark",
+    xaxis_title="Time",
+    yaxis_title="Vitals",
+    height=500
+)
+
+st.plotly_chart(fig, use_container_width=True)
