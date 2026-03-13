@@ -10,7 +10,11 @@ st.set_page_config(page_title="NeoPredict", layout="wide")
 st.title("NeoPredict – Neonatal Monitoring System")
 
 # Load your trained model
-model = joblib.load("apnea_model.pkl")
+import gzip
+import joblib
+
+with gzip.open("apnea_model.pkl.gz", "rb") as f:
+    model = joblib.load(f)
 
 st.sidebar.header("Simulated Sensor Data")
 
