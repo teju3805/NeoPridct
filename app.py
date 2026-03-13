@@ -37,6 +37,38 @@ st.markdown("---")
 # AI Prediction
 if st.button("Run AI Prediction"):
 
+    st.subheader("AI Condition Detection")
+
+    # Apnea detection
+    if respiration < 15:
+        st.error("⚠ Apnea Detected: Breathing rate critically low")
+
+        st.write("🚨 Alert Sent To:")
+        st.write("- NICU Doctor")
+        st.write("- Hospital Caregiver")
+        st.write("- Infant's Parents")
+
+    # Bradycardia detection
+    elif heart_rate < 90:
+        st.error("⚠ Bradycardia Detected: Heart rate dangerously low")
+
+        st.write("🚨 Alert Sent To:")
+        st.write("- NICU Doctor")
+        st.write("- Hospital Caregiver")
+        st.write("- Infant's Parents")
+
+    # Possible sepsis indicators
+    elif temperature > 38 and heart_rate > 150:
+        st.error("⚠ Possible Sepsis Risk Detected")
+
+        st.write("🚨 Alert Sent To:")
+        st.write("- NICU Doctor")
+        st.write("- Hospital Caregiver")
+        st.write("- Infant's Parents")
+
+    else:
+        st.success("Infant Vital Signs Stable")
+
     features = np.array([[heart_rate,spo2,temperature,respiration] + [0]*20])
 
     # Simulated AI prediction logic
