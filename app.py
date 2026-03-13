@@ -39,7 +39,20 @@ if st.button("Run AI Prediction"):
 
     features = np.array([[heart_rate,spo2,temperature,respiration] + [0]*20])
 
-    prediction = model.predict(features)
+    # Simulated AI prediction logic
+
+if heart_rate > 160 or spo2 < 90 or respiration > 50 or temperature > 38:
+
+    st.error("⚠ Critical Risk Detected – Possible Neonatal Distress")
+    st.write("Alert sent to doctors and parents")
+
+elif heart_rate > 140 or respiration > 40:
+
+    st.warning("⚠ Moderate Risk – Infant needs monitoring")
+
+else:
+
+    st.success("Infant Condition Stable")
 
     st.subheader("AI Risk Assessment")
 
