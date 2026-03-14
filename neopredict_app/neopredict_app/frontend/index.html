@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>NeoPredict Neonatal Monitor</title>
+<style>
+body{
+font-family: Arial;
+text-align:center;
+background:#f4f6fa;
+}
+
+.container{
+margin-top:60px;
+}
+
+input{
+padding:10px;
+margin:10px;
+font-size:16px;
+}
+
+button{
+padding:10px 20px;
+font-size:16px;
+cursor:pointer;
+}
+
+.result{
+margin-top:20px;
+font-size:22px;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1>NeoPredict Neonatal Monitoring System</h1>
+
+<div class="container">
+
+<input id="hr" placeholder="Heart Rate">
+<input id="spo2" placeholder="SpO2">
+<input id="rr" placeholder="Respiratory Rate">
+
+<br>
+
+<button onclick="predictApnea()">Predict Apnea</button>
+<button onclick="predictSepsis()">Predict Sepsis</button>
+
+<div class="result" id="result"></div>
+
+</div>
+
+<script>
+
+async function predictApnea(){
+
+let hr=document.getElementById("hr").value
+let spo2=document.getElementById("spo2").value
+let rr=document.getElementById("rr").value
+
+let url=`http://127.0.0.1:8000/predict_apnea?hr=${hr}&spo2=${spo2}&rr=${rr}`
+
+let response=await fetch(url)
+let data=await response.json()
+
+document.getElementById("result").innerText=
+"Apnea Prediction: "+data.prediction
+}
+
+async function predictSepsis(){
+
+let hr=document.getElementById("hr").value
+let spo2=document.getElementById("spo2").value
+let rr=document.getElementById("rr").value
+
+let url=`http://127.0.0.1:8000/predict_sepsis?hr=${hr}&spo2=${spo2}&rr=${rr}`
+
+let response=await fetch(url)
+let data=await response.json()
+
+document.getElementById("result").innerText=
+"Sepsis Prediction: "+data.prediction
+}
+
+</script>
+
+</body>
+</html>
