@@ -3,73 +3,35 @@ import numpy as np
 import joblib
 import gzip
 import time
+import pandas as pd
+import plotly.graph_objects as go
 
-# ---------------------------------------------------
-# Page Config
-# ---------------------------------------------------
+st.set_page_config(page_title="NeoPredict NICU Monitor", layout="wide")
 
-st.set_page_config(
-    page_title="NeoPredict Neonatal Monitoring System",
-    layout="wide"
-)
+st.title("NeoPredict – Neonatal ICU Monitoring System")
+st.markdown("AI-Powered Neonatal Health Monitoring (Hybrid CNN + BiLSTM)")
 
-st.title("🍼 NeoPredict Neonatal Monitoring Dashboard")
-
-st.markdown("AI-powered neonatal monitoring using **Hybrid CNN + BiLSTM models**")
-
-# ---------------------------------------------------
+# ------------------------------------------------
 # Load Models
-# ---------------------------------------------------
+# ------------------------------------------------
 
 @st.cache_resource
 def load_models():
-
-    with gzip.open("apnea_model.pkl.gz", "rb") as f:
+    with gzip.open("apnea_model.pkl.gz","rb") as f:
         apnea_model = joblib.load(f)
 
-    with gzip.open("sepsis_model.pkl.gz", "rb") as f:
+    with gzip.open("sepsis_model.pkl.gz","rb") as f:
         sepsis_model = joblib.load(f)
 
     return apnea_model, sepsis_model
 
-
 apnea_model, sepsis_model = load_models()
 
-# ---------------------------------------------------
-# Risk Rules
-# ---------------------------------------------------
+# ------------------------------------------------
+# Sidebar Patient Info
+# ------------------------------------------------
 
-def rule_based_risk(hr, spo2, rr, temp):
-
-    if 120 <= hr <= 160 and 95 <= spo2 <= 100 and 30 <= rr <= 60 and 36.5 <= temp <= 37.5:
-        return "Normal Infant", "Normal"
-
-    if 100 <= hr <= 120 and 90 <= spo2 <= 94 and rr < 25:
-        return "Apnea", "Moderate Risk"
-
-    if hr < 100 and spo2 < 90:
-        return "Apnea", "Critical Risk"
-
-    if 90 <= hr <= 110 and 92 <= spo2 <= 95 and 25 <= rr <= 40:
-        return "Bradycardia", "Moderate Risk"
-
-    if hr < 90 and spo2 < 90 and rr < 25:
-        return "Bradycardia", "Critical Risk"
-
-    if 160 <= hr <= 180 and 90 <= spo2 <= 94 and 60 <= rr <= 70 and 37.5 <= temp <= 38.5:
-        return "Sepsis", "Moderate Risk"
-
-    if (hr > 180 or hr < 100) and spo2 < 90 and rr > 70 and (temp > 38.5 or temp < 35):
-        return "Sepsis", "Critical Risk"
-
-    return "Unknown", "Monitor"
-
-
-# ---------------------------------------------------
-# Sidebar - Patient Details
-# ---------------------------------------------------
-
-st.sidebar.header("👶 Patient Information")
+st.sidebar.header("👶 Patient Details")
 
 patient_id = st.sidebar.text_input("Patient ID")
 doctor = st.sidebar.text_input("Doctor Name")
@@ -77,74 +39,131 @@ caregiver = st.sidebar.text_input("Caregiver Contact")
 
 st.sidebar.markdown("---")
 
-# ---------------------------------------------------
+# ------------------------------------------------
 # Sensor Inputs
-# ---------------------------------------------------
+# ------------------------------------------------
 
 st.header("📡 Sensor Inputs")
 
-col1, col2, col3, col4 = st.columns(4)
+c1,c2,c3,c4 = st.columns(4)
 
-with col1:
-    hr = st.number_input("Heart Rate (bpm)", 40, 220, 140)
+with c1:
+    hr = st.number_input("Heart Rate (bpm)",50,220,140)
 
-with col2:
-    spo2 = st.number_input("SpO₂ (%)", 70, 100, 95)
+with c2:
+    spo2 = st.number_input("SpO₂ (%)",70,100,95)
 
-with col3:
-    rr = st.number_input("Respiration Rate", 5, 100, 40)
+with c3:
+    rr = st.number_input("Respiration Rate",10,100,40)
 
-with col4:
-    temp = st.number_input("Temperature °C", 34.0, 41.0, 37.0)
+with c4:
+    temp = st.number_input("Temperature °C",34.0,41.0,37.0)
 
-# ---------------------------------------------------
-# Sensor Visualization
-# ---------------------------------------------------
+# ------------------------------------------------
+# NICU Monitor Panel
+# ------------------------------------------------
 
-st.subheader("📊 Live Sensor Monitoring")
+st.header("🖥 NICU Vital Monitor")
 
-c1, c2, c3, c4 = st.columns(4)
+v1,v2,v3,v4 = st.columns(4)
 
-c1.metric("Heart Rate", hr)
-c2.metric("SpO₂", spo2)
-c3.metric("Respiration", rr)
-c4.metric("Temperature", temp)
+v1.metric("Heart Rate",hr)
+v2.metric("SpO₂",spo2)
+v3.metric("Respiration",rr)
+v4.metric("Temperature",temp)
 
-# ---------------------------------------------------
-# AI Processing Pipeline
-# ---------------------------------------------------
+# ------------------------------------------------
+# ECG Simulation
+# ------------------------------------------------
+
+st.subheader("❤️ ECG Waveform")
+
+x = np.linspace(0,10,200)
+y = np.sin(5*x) + np.random.normal(0,0.1,200)
+
+fig_ecg = go.Figure()
+fig_ecg.add_trace(go.Scatter(x=x,y=y,mode='lines'))
+fig_ecg.update_layout(height=200)
+
+st.plotly_chart(fig_ecg,use_container_width=True)
+
+# ------------------------------------------------
+# SpO2 Gauge
+# ------------------------------------------------
+
+st.subheader("🫁 SpO₂ Gauge")
+
+gauge = go.Figure(go.Indicator(
+    mode="gauge+number",
+    value=spo2,
+    gauge={'axis':{'range':[70,100]}},
+))
+
+st.plotly_chart(gauge,use_container_width=True)
+
+# ------------------------------------------------
+# Respiration Wave
+# ------------------------------------------------
+
+st.subheader("🌬 Respiration Waveform")
+
+x2 = np.linspace(0,10,200)
+y2 = np.sin(x2*rr/20)
+
+fig_resp = go.Figure()
+fig_resp.add_trace(go.Scatter(x=x2,y=y2,mode="lines"))
+fig_resp.update_layout(height=200)
+
+st.plotly_chart(fig_resp,use_container_width=True)
+
+# ------------------------------------------------
+# Sensor Panel
+# ------------------------------------------------
+
+st.header("📟 Sensor Devices")
+
+s1,s2,s3,s4 = st.columns(4)
+
+s1.write("🩺 ECG Sensor")
+s2.write("🫁 Pulse Oximeter")
+s3.write("🌬 Respiration Belt")
+s4.write("🌡 Temperature Sensor")
+
+# ------------------------------------------------
+# AI Pipeline Animation
+# ------------------------------------------------
 
 st.header("🧠 AI Processing Pipeline")
 
-pipeline = st.progress(0)
-
 steps = [
-    "Collecting Sensor Signals...",
-    "Signal Preprocessing...",
-    "Feature Extraction...",
-    "Feeding Data to CNN Layer...",
-    "Temporal Analysis using BiLSTM...",
-    "Hybrid Model Decision Layer...",
-    "Risk Classification..."
+"Receiving Sensor Signals",
+"Signal Preprocessing",
+"Feature Extraction",
+"CNN Spatial Feature Learning",
+"BiLSTM Temporal Analysis",
+"Hybrid Model Decision",
+"Disease Classification",
+"Risk Assessment",
+"Alert System Trigger"
 ]
 
-if st.button("▶ Start AI Analysis"):
+progress = st.progress(0)
 
-    for i, step in enumerate(steps):
+if st.button("▶ Run AI Diagnosis"):
+
+    for i,step in enumerate(steps):
         st.write(step)
-        pipeline.progress((i + 1) / len(steps))
+        progress.progress((i+1)/len(steps))
         time.sleep(0.6)
 
-    # ---------------------------------------------------
+    # ------------------------------------------------
     # Model Prediction
-    # ---------------------------------------------------
+    # ------------------------------------------------
 
-    features = np.array([[hr, spo2, rr]])
+    features = np.array([[hr,spo2,rr]])
 
     apnea_pred = apnea_model.predict(features)[0]
     sepsis_pred = sepsis_model.predict(features)[0]
-
-    disease, risk = rule_based_risk(hr, spo2, rr, temp)
 
     detected = "Normal"
 
@@ -157,55 +176,68 @@ if st.button("▶ Start AI Analysis"):
     elif hr < 90:
         detected = "Bradycardia"
 
-    # ---------------------------------------------------
+    # ------------------------------------------------
+    # Risk Classification
+    # ------------------------------------------------
+
+    risk = "Normal"
+
+    if hr <100 and spo2 <90:
+        risk = "Critical"
+
+    elif 100 <= hr <=120 and 90 <= spo2 <=94:
+        risk = "Moderate"
+
+    elif hr >180 or rr >70 or temp >38.5:
+        risk = "Critical"
+
+    # ------------------------------------------------
     # Results
-    # ---------------------------------------------------
+    # ------------------------------------------------
 
     st.header("🔎 Diagnosis Result")
 
-    r1, r2 = st.columns(2)
+    r1,r2 = st.columns(2)
 
-    r1.metric("Detected Disease", detected)
-    r2.metric("Risk Level", risk)
+    r1.metric("Detected Disease",detected)
+    r2.metric("Risk Level",risk)
 
-    # ---------------------------------------------------
+    # ------------------------------------------------
     # Alert System
-    # ---------------------------------------------------
+    # ------------------------------------------------
 
     st.header("🚨 Alert System")
 
-    if risk == "Critical Risk":
+    if risk == "Critical":
 
         st.error("🚨 CRITICAL CONDITION DETECTED")
 
-        st.write("Alert Sent To:")
+        st.write("Alerts sent to:")
 
-        st.write("👨‍⚕ Doctor:", doctor)
-        st.write("👩‍⚕ Caregiver:", caregiver)
+        st.write("👨‍⚕ Doctor:",doctor)
+        st.write("👩‍⚕ Caregiver:",caregiver)
         st.write("📱 Parents notified")
 
-    elif risk == "Moderate Risk":
+    elif risk == "Moderate":
 
-        st.warning("⚠ Moderate Risk – Monitor Patient")
-
-    elif risk == "Normal":
-
-        st.success("✅ Infant Vitals Normal")
+        st.warning("⚠ Moderate Risk – Monitor Infant")
 
     else:
 
-        st.info("Monitoring Recommended")
+        st.success("✅ Infant Vitals Normal")
 
-# ---------------------------------------------------
-# Clinical Reference Table
-# ---------------------------------------------------
+# ------------------------------------------------
+# Clinical Reference
+# ------------------------------------------------
 
 st.header("📋 Neonatal Clinical Reference")
 
-st.table({
-"Disease":["Normal","Apnea","Bradycardia","Sepsis"],
-"Normal HR":[ "120-160", "100-120", "90-110", "160-180"],
-"SpO2":[ "95-100", "90-94", "92-95", "90-94"],
-"Respiration":[ "30-60", "<25", "25-40", "60-70"],
-"Temperature":[ "36.5-37.5", "36-37.5", "36-37.5", "37.5-38.5"]
+df = pd.DataFrame({
+"Disease":["Normal Infant","Apnea","Bradycardia","Sepsis"],
+"Heart Rate":["120-160","100-120","90-110","160-180"],
+"SpO2":["95-100","90-94","92-95","90-94"],
+"Respiration":["30-60","<25","25-40","60-70"],
+"Temperature":["36.5-37.5","36-37.5","36-37.5","37.5-38.5"]
 })
+
+st.table(df)
