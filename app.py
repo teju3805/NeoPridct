@@ -35,10 +35,11 @@ def load_models():
 
     return apnea_model, sepsis_model
 
+
 apnea_model, sepsis_model = load_models()
 
 # ------------------------------------------------
-# Sidebar Patient Info
+# Sidebar
 # ------------------------------------------------
 
 st.sidebar.header("👶 Patient Details")
@@ -83,46 +84,45 @@ v3.metric("Respiration",rr)
 v4.metric("Temperature",temp)
 
 # ------------------------------------------------
-# ECG Simulation
+# LIVE ECG MONITOR
 # ------------------------------------------------
 
 st.subheader("❤️ Live ECG Monitor")
 
 placeholder = st.empty()
 
-for i in range(30):
+for i in range(25):
 
     x = np.linspace(0,4,200)
 
-    # ECG-like waveform
     y = (
-        np.sin(8*x) * 0.6 +
-        np.sin(15*x) * 0.2 +
+        np.sin(8*x)*0.6 +
+        np.sin(15*x)*0.2 +
         np.random.normal(0,0.05,200)
     )
 
-    fig_ecg = go.Figure()
+    fig = go.Figure()
 
-    fig_ecg.add_trace(
+    fig.add_trace(
         go.Scatter(
             x=x,
             y=y,
             mode="lines",
-            line=dict(color="lime", width=3)
+            line=dict(color="#00ff9c", width=3)
         )
     )
 
-    fig_ecg.update_layout(
-        height=200,
+    fig.update_layout(
         template="plotly_dark",
+        height=200,
         xaxis=dict(visible=False),
         yaxis=dict(visible=False),
         margin=dict(l=0,r=0,t=0,b=0)
     )
 
-    placeholder.plotly_chart(fig_ecg, use_container_width=True)
+    placeholder.plotly_chart(fig, use_container_width=True)
 
-    time.sleep(0.15)
+    time.sleep(0.12)
 
 # ------------------------------------------------
 # SpO2 Gauge
@@ -154,7 +154,7 @@ fig_resp.update_layout(height=200)
 st.plotly_chart(fig_resp,use_container_width=True)
 
 # ------------------------------------------------
-# Sensor Panel
+# Sensors
 # ------------------------------------------------
 
 st.header("📟 Sensor Devices")
@@ -167,7 +167,7 @@ s3.write("🌬 Respiration Belt")
 s4.write("🌡 Temperature Sensor")
 
 # ------------------------------------------------
-# AI Pipeline Animation
+# AI Pipeline
 # ------------------------------------------------
 
 st.header("🧠 AI Processing Pipeline")
@@ -186,91 +186,101 @@ steps = [
 
 progress = st.progress(0)
 
-if st.button("▶ Run AI Diagnosis"):
+run = st.button("▶ Run AI Diagnosis")
+
+if run:
 
     for i,step in enumerate(steps):
         st.write(step)
         progress.progress((i+1)/len(steps))
         time.sleep(0.5)
 
-# ------------------------------------------------
-# Model Prediction (SAFE VERSION)
-# ------------------------------------------------
-
-base_features = np.array([[hr, spo2, rr, temp]])
-
-def prepare_features(model, features):
-    """Adjust feature size to match trained model"""
-    expected = model.n_features_in_
-    current = features.shape[1]
-
-    if current < expected:
-        pad = np.zeros((1, expected - current))
-        features = np.concatenate((features, pad), axis=1)
-
-    if current > expected:
-        features = features[:, :expected]
-
-    return features
-
-
-apnea_pred = 0
-sepsis_pred = 0
-
-if apnea_model is not None:
-    apnea_input = prepare_features(apnea_model, base_features)
-    apnea_pred = apnea_model.predict(apnea_input)[0]
-
-if sepsis_model is not None:
-    sepsis_input = prepare_features(sepsis_model, base_features)
-    sepsis_pred = sepsis_model.predict(sepsis_input)[0]
-
     # ------------------------------------------------
-    # Risk Classification
+    # MODEL PREDICTION
     # ------------------------------------------------
 
-    risk = "Normal"
+    base_features = np.array([[hr,spo2,rr,temp]])
 
-    if hr <100 and spo2 <90:
-        risk = "Critical"
+    def prepare(model,features):
 
-    elif 100 <= hr <=120 and 90 <= spo2 <=94:
-        risk = "Moderate"
+        expected = model.n_features_in_
 
-    elif hr >180 or rr >70 or temp >38.5:
-        risk = "Critical"
+        if features.shape[1] < expected:
+            pad = np.zeros((1,expected-features.shape[1]))
+            features = np.concatenate((features,pad),axis=1)
 
-# ------------------------------------------------
-# Diagnosis Result
-# ------------------------------------------------
+        if features.shape[1] > expected:
+            features = features[:,:expected]
 
-st.header("🔎 Diagnosis Result")
+        return features
 
-detected = "Normal"
 
-if apnea_pred == 1:
-    detected = "Apnea"
+    apnea_pred = 0
+    sepsis_pred = 0
 
-elif sepsis_pred == 1:
-    detected = "Sepsis"
+    if apnea_model is not None:
+        apnea_pred = apnea_model.predict(
+            prepare(apnea_model,base_features)
+        )[0]
 
-elif hr < 90:
-    detected = "Bradycardia"
-
-r1, r2 = st.columns(2)
-
-r1.metric("Detected Disease", detected)
-r2.metric("Risk Level", risk)
+    if sepsis_model is not None:
+        sepsis_pred = sepsis_model.predict(
+            prepare(sepsis_model,base_features)
+        )[0]
 
     # ------------------------------------------------
-    # Alert System
+    # RISK CLASSIFICATION
+    # ------------------------------------------------
+
+    risk="Normal"
+
+    if hr<100 and spo2<90:
+        risk="Critical"
+
+    elif 100<=hr<=120 and 90<=spo2<=94:
+        risk="Moderate"
+
+    elif hr>180 or rr>70 or temp>38.5:
+        risk="Critical"
+
+    # ------------------------------------------------
+    # DISEASE DETECTION
+    # ------------------------------------------------
+
+    detected="Normal"
+
+    if apnea_pred==1:
+        detected="Apnea"
+
+    elif sepsis_pred==1:
+        detected="Sepsis"
+
+    elif hr<90:
+        detected="Bradycardia"
+
+    # ------------------------------------------------
+    # RESULT
+    # ------------------------------------------------
+
+    st.header("🔎 Diagnosis Result")
+
+    r1,r2=st.columns(2)
+
+    r1.metric("Detected Disease",detected)
+    r2.metric("Risk Level",risk)
+
+    # ------------------------------------------------
+    # ICU ALERT SYSTEM
     # ------------------------------------------------
 
     st.header("🚨 Alert System")
 
-    if risk == "Critical":
+    if risk=="Critical":
 
-        st.error("🚨 CRITICAL CONDITION DETECTED")
+        # blinking effect
+        for i in range(6):
+            st.error("🚨 CRITICAL CONDITION DETECTED")
+            time.sleep(0.3)
 
         st.write("Alerts sent to:")
 
@@ -278,7 +288,7 @@ r2.metric("Risk Level", risk)
         st.write("👩‍⚕ Caregiver:",caregiver)
         st.write("📱 Parents notified")
 
-    elif risk == "Moderate":
+    elif risk=="Moderate":
 
         st.warning("⚠ Moderate Risk – Monitor Infant")
 
@@ -287,17 +297,23 @@ r2.metric("Risk Level", risk)
         st.success("✅ Infant Vitals Normal")
 
 # ------------------------------------------------
-# Clinical Reference
+# Clinical Table
 # ------------------------------------------------
 
 st.header("📋 Neonatal Clinical Reference")
 
-df = pd.DataFrame({
+df=pd.DataFrame({
+
 "Disease":["Normal Infant","Apnea","Bradycardia","Sepsis"],
+
 "Heart Rate":["120-160","100-120","90-110","160-180"],
+
 "SpO2":["95-100","90-94","92-95","90-94"],
+
 "Respiration":["30-60","<25","25-40","60-70"],
+
 "Temperature":["36.5-37.5","36-37.5","36-37.5","37.5-38.5"]
+
 })
 
 st.table(df)
