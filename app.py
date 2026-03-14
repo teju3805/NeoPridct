@@ -193,31 +193,26 @@ if st.button("▶ Run AI Diagnosis"):
         progress.progress((i+1)/len(steps))
         time.sleep(0.5)
 
-    # ------------------------------------------------
-    # Model Prediction
-    # ------------------------------------------------
-    features = np.array([[hr,spo2,rr,temp]])
-    
-    apnea_pred = 0
-    sepsis_pred = 0
-    
-    if apnea_model is not None:
-        apnea_pred = apnea_model.predict(features)[0]
-    
-    if sepsis_model is not None:
-        sepsis_pred = sepsis_model.predict(features)[0]
-    
+# Model Prediction
+# ------------------------------------------------
 
-    detected = "Normal"
+features = np.array([[hr, spo2, rr, temp]])
 
-    if apnea_pred == 1:
-        detected = "Apnea"
+# Ensure feature size matches model expectation
+expected = apnea_model.n_features_in_
 
-    elif sepsis_pred == 1:
-        detected = "Sepsis"
+if features.shape[1] < expected:
+    pad = np.zeros((1, expected - features.shape[1]))
+    features = np.concatenate((features, pad), axis=1)
 
-    elif hr < 90:
-        detected = "Bradycardia"
+apnea_pred = 0
+sepsis_pred = 0
+
+if apnea_model is not None:
+    apnea_pred = apnea_model.predict(features)[0]
+
+if sepsis_model is not None:
+    sepsis_pred = sepsis_model.predict(features)[0]
 
     # ------------------------------------------------
     # Risk Classification
