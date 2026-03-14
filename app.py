@@ -18,13 +18,25 @@ st.markdown("AI-Powered Neonatal Health Monitoring (Hybrid CNN + BiLSTM)")
 @st.cache_resource
 def load_models():
 
-    with gzip.open("neopredict_app/neopredict_app/backend/apnea_model.pkl.gz","rb") as f:
-        apnea_model = joblib.load(f)
+    apnea_model = None
+    sepsis_model = None
 
-    with gzip.open("neopredict_app/neopredict_app/backend/sepsis_model.pkl.gz","rb") as f:
-        sepsis_model = joblib.load(f)
+    try:
+        with gzip.open("apnea_model.pkl.gz","rb") as f:
+            apnea_model = joblib.load(f)
+    except:
+        st.warning("Apnea model not found")
+
+    try:
+        with gzip.open("sepsis_model.pkl.gz","rb") as f:
+            sepsis_model = joblib.load(f)
+    except:
+        st.warning("Sepsis model not found")
 
     return apnea_model, sepsis_model
+
+
+apnea_model, sepsis_model = load_models()
 
 # ------------------------------------------------
 # Sidebar Patient Info
@@ -95,7 +107,7 @@ st.subheader("🫁 SpO₂ Gauge")
 gauge = go.Figure(go.Indicator(
     mode="gauge+number",
     value=spo2,
-    gauge={'axis':{'range':[70,100]}},
+    gauge={'axis':{'range':[70,100]}}
 ))
 
 st.plotly_chart(gauge,use_container_width=True)
@@ -153,7 +165,7 @@ if st.button("▶ Run AI Diagnosis"):
     for i,step in enumerate(steps):
         st.write(step)
         progress.progress((i+1)/len(steps))
-        time.sleep(0.6)
+        time.sleep(0.5)
 
     # ------------------------------------------------
     # Model Prediction
@@ -161,8 +173,14 @@ if st.button("▶ Run AI Diagnosis"):
 
     features = np.array([[hr,spo2,rr]])
 
-    apnea_pred = apnea_model.predict(features)[0]
-    sepsis_pred = sepsis_model.predict(features)[0]
+    apnea_pred = 0
+    sepsis_pred = 0
+
+    if apnea_model is not None:
+        apnea_pred = apnea_model.predict(features)[0]
+
+    if sepsis_model is not None:
+        sepsis_pred = sepsis_model.predict(features)[0]
 
     detected = "Normal"
 
