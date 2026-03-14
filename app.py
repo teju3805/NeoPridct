@@ -240,16 +240,27 @@ if sepsis_model is not None:
     elif hr >180 or rr >70 or temp >38.5:
         risk = "Critical"
 
-    # ------------------------------------------------
-    # Results
-    # ------------------------------------------------
+# ------------------------------------------------
+# Diagnosis Result
+# ------------------------------------------------
 
-    st.header("🔎 Diagnosis Result")
+st.header("🔎 Diagnosis Result")
 
-    r1,r2 = st.columns(2)
+detected = "Normal"
 
-    r1.metric("Detected Disease",detected)
-    r2.metric("Risk Level",risk)
+if apnea_pred == 1:
+    detected = "Apnea"
+
+elif sepsis_pred == 1:
+    detected = "Sepsis"
+
+elif hr < 90:
+    detected = "Bradycardia"
+
+r1, r2 = st.columns(2)
+
+r1.metric("Detected Disease", detected)
+r2.metric("Risk Level", risk)
 
     # ------------------------------------------------
     # Alert System
