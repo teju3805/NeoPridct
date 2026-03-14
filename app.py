@@ -86,16 +86,43 @@ v4.metric("Temperature",temp)
 # ECG Simulation
 # ------------------------------------------------
 
-st.subheader("❤️ ECG Waveform")
+st.subheader("❤️ Live ECG Monitor")
 
-x = np.linspace(0,10,200)
-y = np.sin(5*x) + np.random.normal(0,0.1,200)
+placeholder = st.empty()
 
-fig_ecg = go.Figure()
-fig_ecg.add_trace(go.Scatter(x=x,y=y,mode='lines'))
-fig_ecg.update_layout(height=200)
+for i in range(30):
 
-st.plotly_chart(fig_ecg,use_container_width=True)
+    x = np.linspace(0,4,200)
+
+    # ECG-like waveform
+    y = (
+        np.sin(8*x) * 0.6 +
+        np.sin(15*x) * 0.2 +
+        np.random.normal(0,0.05,200)
+    )
+
+    fig_ecg = go.Figure()
+
+    fig_ecg.add_trace(
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            line=dict(color="lime", width=3)
+        )
+    )
+
+    fig_ecg.update_layout(
+        height=200,
+        template="plotly_dark",
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+        margin=dict(l=0,r=0,t=0,b=0)
+    )
+
+    placeholder.plotly_chart(fig_ecg, use_container_width=True)
+
+    time.sleep(0.15)
 
 # ------------------------------------------------
 # SpO2 Gauge
@@ -169,17 +196,17 @@ if st.button("▶ Run AI Diagnosis"):
     # ------------------------------------------------
     # Model Prediction
     # ------------------------------------------------
-
-    features = np.array([[hr,spo2,rr]])
-
+    features = np.array([[hr,spo2,rr,temp]])
+    
     apnea_pred = 0
     sepsis_pred = 0
-
+    
     if apnea_model is not None:
         apnea_pred = apnea_model.predict(features)[0]
-
+    
     if sepsis_model is not None:
         sepsis_pred = sepsis_model.predict(features)[0]
+    
 
     detected = "Normal"
 
