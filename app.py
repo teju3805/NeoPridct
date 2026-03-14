@@ -17,15 +17,14 @@ st.markdown("AI-Powered Neonatal Health Monitoring (Hybrid CNN + BiLSTM)")
 
 @st.cache_resource
 def load_models():
-    with gzip.open("apnea_model.pkl.gz","rb") as f:
+
+    with gzip.open("neopredict_app/neopredict_app/backend/apnea_model.pkl.gz","rb") as f:
         apnea_model = joblib.load(f)
 
-    with gzip.open("sepsis_model.pkl.gz","rb") as f:
+    with gzip.open("neopredict_app/neopredict_app/backend/sepsis_model.pkl.gz","rb") as f:
         sepsis_model = joblib.load(f)
 
     return apnea_model, sepsis_model
-
-apnea_model, sepsis_model = load_models()
 
 # ------------------------------------------------
 # Sidebar Patient Info
