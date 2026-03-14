@@ -22,19 +22,18 @@ def load_models():
     sepsis_model = None
 
     try:
-        with gzip.open("apnea_model.pkl.gz","rb") as f:
+        with gzip.open("neopredict_app/neopredict_app/backend/apnea_model.pkl.gz","rb") as f:
             apnea_model = joblib.load(f)
     except:
         st.warning("Apnea model not found")
 
     try:
-        with gzip.open("sepsis_model.pkl.gz","rb") as f:
+        with gzip.open("neopredict_app/neopredict_app/backend/sepsis_model.pkl.gz","rb") as f:
             sepsis_model = joblib.load(f)
     except:
         st.warning("Sepsis model not found")
 
     return apnea_model, sepsis_model
-
 
 apnea_model, sepsis_model = load_models()
 
