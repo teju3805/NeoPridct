@@ -193,26 +193,37 @@ if st.button("▶ Run AI Diagnosis"):
         progress.progress((i+1)/len(steps))
         time.sleep(0.5)
 
-# Model Prediction
+# ------------------------------------------------
+# Model Prediction (SAFE VERSION)
 # ------------------------------------------------
 
-features = np.array([[hr, spo2, rr, temp]])
+base_features = np.array([[hr, spo2, rr, temp]])
 
-# Ensure feature size matches model expectation
-expected = apnea_model.n_features_in_
+def prepare_features(model, features):
+    """Adjust feature size to match trained model"""
+    expected = model.n_features_in_
+    current = features.shape[1]
 
-if features.shape[1] < expected:
-    pad = np.zeros((1, expected - features.shape[1]))
-    features = np.concatenate((features, pad), axis=1)
+    if current < expected:
+        pad = np.zeros((1, expected - current))
+        features = np.concatenate((features, pad), axis=1)
+
+    if current > expected:
+        features = features[:, :expected]
+
+    return features
+
 
 apnea_pred = 0
 sepsis_pred = 0
 
 if apnea_model is not None:
-    apnea_pred = apnea_model.predict(features)[0]
+    apnea_input = prepare_features(apnea_model, base_features)
+    apnea_pred = apnea_model.predict(apnea_input)[0]
 
 if sepsis_model is not None:
-    sepsis_pred = sepsis_model.predict(features)[0]
+    sepsis_input = prepare_features(sepsis_model, base_features)
+    sepsis_pred = sepsis_model.predict(sepsis_input)[0]
 
     # ------------------------------------------------
     # Risk Classification
