@@ -1,6 +1,6 @@
 streamlit
 numpy
-joblib
 pandas
 plotly
+joblib
 scikit-learn
